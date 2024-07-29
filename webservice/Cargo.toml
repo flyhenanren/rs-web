@@ -1,0 +1,26 @@
+[package]
+name = "webservice"
+version = "0.1.0"
+edition = "2021"
+
+# 运行时，如果不指明二进制文件，则运行下面的teacher-service
+
+default-run="teacher-service" 
+
+[dependencies]
+actix-rt="2.6.0"
+actix-web="4.0.0-rc.2"
+chrono={version="0.4.19", features=["serde"]}
+dotenv="0.15.0" #向env中设置环境变量
+#openssl={version="0.10.38", features=["vendored"]}
+serde={version="1.0.132",features=["derive"]}
+sqlx={version="0.5.10", default_features = false, features= [
+  "postgres",
+  "runtime-tokio-rustls",
+  "macros",
+  "chrono"
+]}
+syn = "1"
+
+[[bin]]
+name="teacher-service"
