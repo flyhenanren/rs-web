@@ -13,7 +13,7 @@ actix-web="4.0.0-rc.2"
 chrono={version="0.4.19", features=["serde"]}
 dotenv="0.15.0" #向env中设置环境变量
 #openssl={version="0.10.38", features=["vendored"]}
-serde={version="1.0.132",features=["derive"]}
+serde={version="1.0.134",features=["derive"]}
 sqlx={version="0.5.10", default_features = false, features= [
   "postgres",
   "runtime-tokio-rustls",

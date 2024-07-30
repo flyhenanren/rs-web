@@ -3,15 +3,16 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use crate::error::MyError;
+use sqlx::FromRow;
 
 // 从别的路径引用这个模块，路径如下
 // use crate::models::course::Course;
 
 // 用来做查询的struct
-#[derive(Serialize, Debug, Clone, sqlx::FromRow)]
+#[derive(Serialize, Debug, Clone, FromRow)]
 pub struct Course {
-    pub teacher_id: i32,
     pub id: i32,
+    pub teacher_id: i32,
     pub name: String,
     pub time: Option<NaiveDateTime>,
 
@@ -22,6 +23,12 @@ pub struct Course {
     pub price: Option<i32>,
     pub language: Option<String>,
     pub level: Option<String>,
+}
+
+#[derive(Serialize, Debug, Clone, FromRow)]
+pub struct Teacher{
+    pub id: i32,
+    pub name: Option<String>
 }
 
 // 用来做新增的struct

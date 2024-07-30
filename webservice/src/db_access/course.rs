@@ -1,19 +1,16 @@
 use crate::error::MyError;
-use crate::models::course::{Course, UpdateCourse};
+use crate::models::course::{Course, CreateCourse, UpdateCourse};
 use sqlx::postgres::PgPool;
-use sqlx::query::QueryAs;
 
 pub async fn get_course_for_teacher_db(
     pool: &PgPool,
     teacher_id: i32,
 ) -> Result<Vec<Course>, MyError> {
-    let rows:Vec<Course> = sqlx::query_as!( 
-        Course,
-        r#"SELECT * FROM course WHERE teacher_id = $1"#, 
-        teacher_id
+    let rows:Vec<Course> = sqlx::query_as::<_, Course>(
+        "SELECT * FROM course WHERE teacher_id = ?"
     )
-    .fetch_all(pool)
-    .await?;
+    .bind(teacher_id)
+    .fetch_all(pool).await?;
 
     Ok(rows)
 }
@@ -23,13 +20,11 @@ pub async fn get_coruse_detail_db(
     teacher_id: i32,
     course_id: i32,
 ) -> Result<Course, MyError> {
-    let row = sqlx::query_as!(
-        Course, 
-        r#"SELECT * FROM course 
-    WHERE teacher_id = $1 AND id = $2"#,
-        teacher_id,
-        course_id
+    let row = sqlx::query_as::<_, Course>(
+        "SELECT * FROM course WHERE teacher_id = ? AND id = ?"
     )
+    .bind(teacher_id)
+    .bind(course_id)
     .fetch_optional(pool)
     .await?;
 
@@ -40,23 +35,20 @@ pub async fn get_coruse_detail_db(
     }
 }
 
-pub async fn post_new_course_db(pool: &PgPool, new_course: Course) -> Result<Course, MyError> {
-    let row = sqlx::query_as!(
-        Course,
+pub async fn post_new_course_db(pool: &PgPool, new_course: CreateCourse) -> Result<Course, MyError> {
+    let row = sqlx::query_as::<_,Course>(
         r#"INSERT INTO course(teacher_id, name, description, format,structure,duration,price,language,level) 
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-    RETURNING id, teacher_id, name, time, description, format,structure,duration,price,language,level"#,
-        new_course.id,
-        new_course.teacher_id,
-        new_course.name,
-        new_course.description,
-        new_course.format,
-        new_course.structure,
-        new_course.duration,
-        new_course.price,
-        new_course.language,
-        new_course.level,
-    )
+    VALUES (?,?,?,?,?,?,?,?,?)
+    RETURNING id, teacher_id, name, time, description, format,structure,duration,price,language,level"#)
+    .bind(new_course.teacher_id)
+    .bind(new_course.name)
+    .bind(new_course.description)
+    .bind(new_course.format)
+    .bind(new_course.structure)
+    .bind(new_course.duration)
+    .bind(new_course.price)
+    .bind(new_course.language)
+    .bind(new_course.level)
     .fetch_one(pool)
     .await?;
 
@@ -64,11 +56,11 @@ pub async fn post_new_course_db(pool: &PgPool, new_course: Course) -> Result<Cou
 }
 
 pub async fn delete_course_db(pool: &PgPool, teacher_id: i32, id:i32) -> Result<String, MyError>{
-    let  course_row = sqlx::query!(
-        "DELETE FROM course WHERE teacher_id = $1 AND id = $2",
-        teacher_id,
-        id,
+    let  course_row = sqlx::query(
+        "DELETE FROM course WHERE teacher_id = ? AND id = ?",
     )
+    .bind(teacher_id)
+    .bind(id)
     .execute(pool)
     .await?;
 
@@ -81,12 +73,11 @@ pub async fn update_course_detail_db(
     id: i32,
     update_course: UpdateCourse
 ) -> Result<Course, MyError>{
-    let current_course_row = sqlx::query_as!(
-        Course,
-        "SELECT * FROM course WHERE teacher_id = $1 AND id = $2",
-        teacher_id,
-        id
+    let current_course_row = sqlx::query_as::<_, Course>(
+        "SELECT * FROM course WHERE teacher_id = ? AND id = ?",
     )
+    .bind(teacher_id)
+    .bind(id)
     .fetch_one(pool)
     .await
     .map_err(|_err| MyError::NotFound("Course id not found.".into()))?;
@@ -138,8 +129,7 @@ pub async fn update_course_detail_db(
         current_course_row.level.unwrap_or_default()
     };
 
-    let udpate_row = sqlx::query_as!(
-        Course,
+    let udpate_row = sqlx::query_as::<_, Course>(
        " UPDATE course SET 
             name = $1,
             description = $2,
@@ -152,25 +142,25 @@ pub async fn update_course_detail_db(
             WHERE teacher_id = $9 AND id = $10
             RETURNING id, teacher_id, name, description, format, structure,
             duration, price, language, level",
-            name,
-            description,
-            format,
-            structure, 
-            duration,
-            price,
-            language,
-            level,
-            teacher_id,
-            id
     )
+    .bind(name)
+    .bind(description)
+    .bind(format)
+    .bind(structure) 
+    .bind(duration)
+    .bind(price)
+    .bind(language)
+    .bind(level)
+    .bind(teacher_id)
+    .bind(id)
     .fetch_one(pool)
-    .await?;
+    .await;
 
-    if let Ok(course) = course_row {
+    if let Ok(course) = udpate_row {
         Ok(course)
     }else {
         Err(MyError::NotFound("Course id Not Found.".into()))
     }
 
-
 }
+
